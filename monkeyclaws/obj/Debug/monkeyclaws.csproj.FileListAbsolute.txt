@@ -1,0 +1,13 @@
+c:\users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\bin\Debug\monkeyclaws.exe.config
+c:\users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\bin\Debug\monkeyclaws.exe
+c:\users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\bin\Debug\monkeyclaws.pdb
+c:\users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\obj\Debug\monkeyclaws.csprojResolveAssemblyReference.cache
+c:\users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\obj\Debug\monkeyclaws.Form1.resources
+c:\users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\obj\Debug\monkeyclaws.Properties.Resources.resources
+c:\users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\obj\Debug\monkeyclaws.csproj.GenerateResource.Cache
+c:\users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\obj\Debug\monkeyclaws.exe
+c:\users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\obj\Debug\monkeyclaws.pdb
+c:\users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\obj\Debug\monkeyclaws.Calibration.resources
+C:\Users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\bin\Debug\WindowsInput.dll
+C:\Users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\bin\Debug\WindowsInput.xml
+C:\Users\muham\documents\visual studio 2015\Projects\monkeyclaws\monkeyclaws\bin\Debug\KeyboardInterceptor.dll
