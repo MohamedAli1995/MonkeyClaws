@@ -13,39 +13,44 @@ using WindowsInput;
 using KeyboardInterceptor;
 using WindowsInput.Native;
 using System.Runtime.InteropServices;
+using System.IO;
 
 namespace monkeyclaws
 {
+  
     public partial class Form1 : Form
-    {
-
+    { 
+        
+        //mode  1->mouse ,0->keyboard
+        string settingsPath = "C:\\Users\\muham\\Desktop\\monkeyClawsSettings";
+        int mode = 1;
+        int mouseMinAngle = -40;
+        int mouseMaxAngle = 40;
+        int flexNumber = 5;
+        int minRead = 0;
         int gyroHighRotationSpeed = 3;
         int gyroLowRotationSpeed = 1;
+        double gyroThresholdLowSpeed = 0.3;
+        double gyroThresholdHighSpeed = 0.3;
+        List<double> gyroStart = new List<double> { 0, 0, 0 };
+        List<double> gyroCurr = new List<double> { 0, 0, 0 };
+        List<double> gyroPrev = new List<double> { 0, 0, 0 };
+        List<ushort> gyroKeyCC = new List<ushort> { 0x11, 0x1E, 0x0 };//x ,y,z
+        List<ushort> gyroKeyAC = new List<ushort> { 0x1F, 0x20, 0x00 };
+        List<bool> gyroKeyCCPressed = new List<bool> { false, false, false };
+        List<bool> gyroKeyACPressed = new List<bool> { false, false, false };
+        List<bool> gyroKeyCCWasPressed = new List<bool> { false, false, false };
+        List<bool> gyroKeyACWasPressed = new List<bool> { false, false, false };
 
-        bool gyroStarted = false;
-        int gyroKeyXCC = 65;
-        int gyroKeyYCC = 66;
-        int gyroCurrRotationX = 0;
-
-        int gyroKeyXAC = 67;
-        int gyroKeyYAC = 68;
-        int gyroCurrRotationY = 0;
-
-        bool gyroKeyXCCPressed = false;
-        bool gyroKeyYCCPressed =false;
-
-        bool gyroKeyXACPressed =false;
-        bool gyroKeyYACPressed = false;
-
-        double gyroStartX = 1000;
-        double gyroStartY = 1000;
-
-        double gyroCurrX = 10000000;
-        double gyroCurrY = 1000000;
-
-        double gyroThresholdLowSpeed = 0.2;
-        double gyroThresholdHighSpeed = 0.5;
-
+        List<int>gyroCurrRotation = new List<int> { 0, 0, 0 };
+        //flex 
+        List<double> flexStart=new List<double> { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        List<double> flexStartClosed = new List<double> { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        List<double> flexCurr=new List<double> { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        List<ushort> flexKey = new List<ushort> {
+            0x39,0xC8,0x0,0xC8,0x30 };
+            List<bool> flexPressed = new List<bool> { false, false, false,false,false };
+        List<bool> flexWasPressed = new List<bool> { false, false, false, false, false };
 
         Calibration cal;
         BackgroundWorker worker;
@@ -53,15 +58,81 @@ namespace monkeyclaws
         InputSimulator inputManager;
         Timer worker2;
         KeyboardSimulator k;
-      
+        private bool gyroStarted = false;
+
         public Form1()
         {
             InitializeComponent();
             inputManager = new InputSimulator();
-
+            
 
         }
 
+        private void SettingUp()
+        {
+      
+            StreamReader settingsFileReader;
+            settingsFileReader = new StreamReader(settingsPath + ".txt");
+            for (int i = 0; i < 3; i++)
+            {
+                gyroStart[i] = (double.Parse(settingsFileReader.ReadLine()));
+                gyroPrev[i] = gyroStart[i];
+            }
+            for (int i = 0; i < flexNumber; i++)
+            {
+                flexStart[i] = (double.Parse(settingsFileReader.ReadLine()));
+                
+            }
+            for (int i = 0; i < flexNumber; i++)
+                flexStartClosed[i] = (double.Parse(settingsFileReader.ReadLine()));
+
+            settingsFileReader.Close();
+        }
+        private void calibrate(object sender, DoWorkEventArgs e)
+        {
+            while (true)
+            {
+                try
+                {
+                    string temp = mySerial.ReadLine();
+
+                    //   Console.WriteLine(temp);
+                    while (minRead < 10)
+                    {
+                        minRead++;
+                        mySerial.ReadLine();
+                    }
+
+                    if (temp != "" && temp[0] == 'g' && temp.LastIndexOf('g') == 0 && temp.IndexOf('?') == -1 && temp.IndexOf(',') != -1)
+                    {
+                        string temp2 = (temp.Split('g'))[1];
+                        string[] temp3 = temp2.Split(',');
+                        gyroCurr[0] = (double.Parse(temp3[0]));
+                        gyroCurr[1] = (double.Parse(temp3[1]));
+                        gyroCurr[2] = (double.Parse(temp3[2]));
+                        //reading flexes(0,1)
+
+                        for (int i = 0; i < flexNumber; i++)
+                        {
+                            flexCurr[i] = (double.Parse(temp3[3 + i]));
+                            //   Console.Write(flexCurr[i]+ ",");
+                        }
+                        // Console.Write("\n");
+
+                        // Console.WriteLine(gyroCurr[0].ToString());
+                        // Console.WriteLine(gyroCurr[0]);
+                        //  Console.WriteLine(gyroCurr[1]);
+                        temp = "";
+                    };
+                }
+                catch (Exception E)
+                {
+                    Console.WriteLine(E.Message);
+                }
+
+
+            }
+        }
         private void serialPortData(object sender, SerialDataReceivedEventArgs e)
         {
             string temp = ((SerialPort)sender).ReadLine();
@@ -69,12 +140,24 @@ namespace monkeyclaws
             {
                 string temp2 = (temp.Split('g'))[1];
                 string[] temp3 = temp2.Split(',');
-                gyroCurrX = (double.Parse(temp3[0]));
-                gyroCurrY = (double.Parse(temp3[1]));
-                // Console.WriteLine(gyroCurr[0].ToString());
-                // Console.WriteLine(gyroCurr[0]);
-                //  Console.WriteLine(gyroCurr[1]);
-                temp = "";
+                for (int i = 0; i < 3; i++)
+                    gyroCurr[i] =(double.Parse( temp3[i]));
+
+              /*  if(Math.Abs(gyroCurr[0]-gyroPrev[0])>=0.2)
+                {
+                    for (int i = 0; i < 3; i++)
+                        gyroCurr[i] = gyroPrev[i];
+
+                }
+                else
+                {
+                    for (int i = 0; i < 3; i++)
+                        gyroPrev[i] = gyroCurr[i];
+
+                }*/
+                for (int i = 0; i < flexNumber; i++)
+                    flexCurr[i]= (double.Parse(temp3[3+i]));
+
                 gyroStarted = true;
 
             }
@@ -99,11 +182,16 @@ namespace monkeyclaws
             }
             else
             {
-                gyroStartX = cal.gyroStart[0];
-                gyroStartY = cal.gyroStart[1];
-                Console.WriteLine("gyro started");
-                //initialize the app
                 Init();
+                SettingUp();
+                worker = new BackgroundWorker();
+                worker.WorkerSupportsCancellation = true;
+                worker.DoWork += calibrate;
+                worker.RunWorkerAsync();
+                Console.WriteLine("gyro started");
+             
+                //initialize the app
+               
             }
         }
 
@@ -111,9 +199,9 @@ namespace monkeyclaws
         {
             mySerial = new SerialPort();
             mySerial.BaudRate = 115200;
-            mySerial.PortName = "COM7";
-            mySerial.NewLine = Environment.NewLine;
-            mySerial.DataReceived += serialPortData;
+            mySerial.PortName = "COM12";
+           // mySerial.NewLine = Environment.NewLine;
+           // mySerial.DataReceived += serialPortData;
             mySerial.Open();
             worker = new BackgroundWorker();
             worker.WorkerSupportsCancellation = true;
@@ -265,98 +353,331 @@ namespace monkeyclaws
 
         }
 
- 
         private void Update(object sender, DoWorkEventArgs e)
         {
             while (true)
             { if (gyroStarted) {
                   //  Console.WriteLine((gyroStartX + gyroCurrX).ToString());
                 }
-                HandleGyroX();
-                ApplyGyroX();
-                bool f = true;
+                if (mode == 0) { 
+                HandleGyro();
+                ApplyGyro();
+                HandleFlex();
+               ApplyFlex();
+                }
+               else  //mouse mode
+                {
+                    HandleMouse();
+                    HandleFlex();
+                    //ApplyMouse();
+
+                }
                 //Console.Write(gyroKeyXCCPressed);
                 //Console.Write(gyroKeyXACPressed);
                 
-                Console.Write((gyroStartX + gyroCurrX).ToString());
+           /*     Console.Write((gyroStartX + gyroCurrX).ToString());
                 Console.Write("   ");
                 Console.Write(gyroCurrRotationX.ToString());
-                Console.Write("\n");
+                Console.Write("\n");*/
             }
         }
-        //apply gyroEffect in x-axis
-        private void ApplyGyroX()
+
+        private void ApplyFlex()
         {
-
-
-            if (gyroKeyXACPressed)
+            for (int i = 0; i<flexNumber; i++)
             {
-                // inputManager.Keyboard.KeyDown((VirtualKeyCode)gyroKeyXCC);
-                // PressKey(Keys.A, false);
-                //   PressKey(Keys.A, true);
-                //k.KeyDown(VirtualKeyCode.VK_A);
+                if (flexPressed[i] == true)
+                {
+                    Console.WriteLine(i);
+                    SendKey(flexKey[i]);
+                  
 
-               
-                SendKey(0x20);
-                System.Threading.Thread.Sleep(gyroCurrRotationX);
-                SendKeyUp(0x20);
-                //  Console.WriteLine(gyroKeyXCCPressed);
+                }
+                else
+                {
+                    if(flexWasPressed[i] )
+                    {
+                        SendKeyUp(flexKey[i]);
+                        flexWasPressed[i] = false;
+                    }
+                   
+                }
             }
-            if (gyroKeyXCCPressed)
+        }
+        int counter = 0;
+        private void HandleFlex()
+        {
+            counter++;
+            if (counter < 30)
+                return;
+            counter = 10;
+            for (int i = 0; i < flexNumber; i++)
             {
-                // inputManager.Keyboard.KeyDown((VirtualKeyCode)gyroKeyXCC);
-                // PressKey(Keys.A, false);
-                //   PressKey(Keys.A, true);
-                //k.KeyDown(VirtualKeyCode.VK_A);
-              
-                SendKey(0x1E);
-                System.Threading.Thread.Sleep(gyroCurrRotationX);
-                // Console.WriteLine(gyroKeyXCCPressed);
-                SendKeyUp(0x1E);
+                //  if (flexCurr[i] <= (flexStart[i]-flexStartClosed[i])/2)
+                if (flexCurr[i] <= 0.5f)
+                {
+                    flexPressed[i] = true;
+                 //   flexWasPressed[i] = true;
+                   // Console.WriteLine("key pressed");
+
+                }
+                else
+                {
+                    flexPressed[i] = false;
+                }
             }
+
+            }
+
+        private void ApplyGyroMouse()
+        {
             
-       
-          
+        }
+        int neglect = 0;
+        private void HandleMouse()
+        {
+            InputSimulator input = new InputSimulator();
+            if (neglect < 20)
+            {
+
+                neglect++;
+                return;
+            }
+
+
+            List<double> gyroCalculated = new List<double>
+            {
+                -gyroStart[0]+gyroCurr[0],-gyroStart[1]+gyroCurr[1],-1*(-gyroStart[2]+gyroCurr[2])
+        };
+
+            for (int i = 0; i < 3; i++)
+            {
+                gyroCalculated[i] =
+                    MapRange(gyroCalculated[i], -0.4, 0.5, 0, 65535);
+            }
+            input.Mouse.MoveMouseTo(gyroCalculated[2], gyroCalculated[0]);
+            //  double gyroYCalculated = -gyroStartY + gyroCurrY;
+            //block mouse to 90,-90
+
+            Console.Write(gyroCurr[0].ToString() + " ," + gyroCurr[1].ToString());
+            Console.Write("\n");
+            //  input.Mouse.Sleep(1);
+            if (flexPressed[1])
+            {
+                if (!flexWasPressed[1])
+                {
+                    input.Mouse.LeftButtonDown();
+                    flexWasPressed[1] = true;
+                }
+
+            }
+            else
+            {
+                if (flexWasPressed[1])
+                {
+                    flexWasPressed[1] = false;
+                    input.Mouse.LeftButtonUp();
+                }
+            };
+            //2
+            if (flexPressed[3])
+            {
+                if (!flexWasPressed[3])
+                {
+                    input.Mouse.RightButtonDown();
+                    flexWasPressed[3] = true;
+                }
+
+            }
+            else
+            {
+                if (flexWasPressed[3])
+                {
+                    flexWasPressed[3] = false;
+                    input.Mouse.RightButtonUp();
+                }
+            }
 
         }
-        
-        //to handle gyro readings
-        private void HandleGyroX()
+
+        //apply gyroEffect in x-axis
+        private void ApplyGyro()
         {
-            double gyroXCalculated = gyroStartX + gyroCurrX;
-            if (gyroXCalculated > gyroThresholdLowSpeed&& gyroXCalculated < gyroThresholdHighSpeed)
+
+            if (gyroKeyACPressed[0])
             {
+
+                SendKey(gyroKeyAC[0]);
+                System.Threading.Thread.Sleep(1);
+
+            }
+             else
+              {
                
-                gyroKeyXCCPressed = true;
-                Console.WriteLine(gyroKeyXCCPressed);
-                gyroKeyXACPressed = false;
-                gyroCurrRotationX = gyroLowRotationSpeed;
+                  SendKeyUp(gyroKeyAC[0]);
+              }
+            /*
+        else 
+            {
+
 
             }
-           else if (gyroXCalculated >gyroThresholdHighSpeed)
+    */
+
+            if (gyroKeyCCPressed[0])
             {
-                gyroKeyXCCPressed = true;
-                gyroKeyXACPressed = false;
-                gyroCurrRotationX = gyroHighRotationSpeed;
+                SendKey(gyroKeyCC[0]);
+                System.Threading.Thread.Sleep(1);
+
+
             }
-            else if (gyroXCalculated < -gyroThresholdLowSpeed && gyroXCalculated > -gyroThresholdHighSpeed)
+            else
             {
-                gyroKeyXCCPressed = false;
-                gyroKeyXACPressed = true;
-                gyroCurrRotationX = gyroLowRotationSpeed;
-            }
-            else if (gyroXCalculated < -gyroThresholdHighSpeed)
-            {
-                gyroKeyXCCPressed = false;
-                gyroKeyXACPressed = true;
-                gyroCurrRotationX = gyroHighRotationSpeed;
-            }
-            else if (gyroXCalculated < gyroThresholdLowSpeed && gyroXCalculated > -gyroThresholdHighSpeed)
-            {
-                gyroKeyXCCPressed = false;
-                gyroKeyXACPressed = false;
+                SendKeyUp(gyroKeyCC[0]);
+
             }
 
+            for (int i=1; i<3; i++)
+            {
+                if (gyroKeyACPressed[i])
+                {
+
+                    SendKey(gyroKeyAC[i]);
+                    System.Threading.Thread.Sleep(2);
+                      SendKeyUp(gyroKeyAC[i]);
+
+                }
+              /*  else
+                {
+                    if(true)
+                    {
+                        SendKeyUp(gyroKeyAC[i]);
+                        gyroKeyACWasPressed[i] = false;
+                    }
+                    SendKeyUp(gyroKeyAC[i]);
+                }*/
+                /*
+            else 
+                {
+                    
+                   
+                }
+        */
+
+                if (gyroKeyCCPressed[i])
+                {
+                    SendKey(gyroKeyCC[i]);
+                    System.Threading.Thread.Sleep(2);
+                    SendKeyUp(gyroKeyCC[i]);
+
+                }
+           /*     else
+                {
+                    SendKeyUp(gyroKeyCC[i]);
+                }
+                *//*
+                else
+                {
+                    if (true)
+                    {
+                        SendKeyUp(gyroKeyCC[i]);
+                        gyroKeyCCWasPressed[i] = false;
+                    }
+                }*/
+            }
+
+
+        }
+
+        //to handle gyro readings
+        private void HandleGyro()
+        {
+           for(int i=0; i<3; i++)
+            {
+                /*    double gyroCalculated = -gyroStart[0] + gyroCurr[i];
+                   //Console.Write("gyro #" + i + " : " + gyroCalculated.ToString());
+                   if (gyroCalculated >gyroThresholdHighSpeed)
+                   {
+
+                       gyroKeyCCPressed[i] = true;
+                       gyroKeyCCWasPressed[i] = true;
+
+                       gyroKeyACPressed[i] = false;
+                       gyroKeyACWasPressed[i] = false;
+
+                   }
+                   else if(gyroCalculated<-gyroThresholdHighSpeed)
+                   {
+
+                       gyroKeyCCPressed[i] = false;
+                       gyroKeyCCWasPressed[i] = false;
+
+                       gyroKeyACPressed[i] = true;
+                       gyroKeyACWasPressed[i] = true;
+
+
+
+                   }
+                   else 
+                   {
+                       Console.WriteLine("both false");
+                       gyroKeyCCPressed[i] = false;
+
+                       gyroKeyACPressed[i] = false;
+
+                       gyroKeyCCWasPressed[i] = false;
+                       gyroKeyACWasPressed[i] = false;
+
+                   }*/
+                double gyroCalculated = -gyroStart[i] + gyroCurr[i];
+                if (gyroCalculated > gyroThresholdLowSpeed && gyroCalculated < gyroThresholdHighSpeed)
+                  {
+
+                      gyroKeyCCPressed[i] = true;
+
+                      gyroKeyACPressed[i] = false;
+                      gyroCurrRotation[i] = gyroLowRotationSpeed;
+
+                  }
+                  else if (gyroCalculated > gyroThresholdHighSpeed)
+                  {
+                      gyroKeyCCPressed[i] = true;
+                      gyroKeyACPressed[i] = false;
+                      gyroCurrRotation[i] = gyroHighRotationSpeed;
+                  }
+                  else if (gyroCalculated < -gyroThresholdLowSpeed && gyroCalculated > -gyroThresholdHighSpeed)
+                  {
+                      gyroKeyCCPressed[i] = false;
+                      gyroKeyACPressed[i] = true;
+                      gyroCurrRotation[i] = gyroLowRotationSpeed;
+                  }
+                  else if (gyroCalculated < -gyroThresholdHighSpeed)
+                  {
+                      gyroKeyCCPressed[i] = false;
+                      gyroKeyACPressed[i] = true;
+                      gyroCurrRotation[i] = gyroHighRotationSpeed;
+                  }
+                  else if (gyroCalculated < gyroThresholdLowSpeed && gyroCalculated > -gyroThresholdHighSpeed)
+                  {
+                      gyroKeyCCPressed[i] = false;
+                      gyroKeyACPressed[i] = false;
+                  }
+                  
+            }
+
+        }
+        public double MapRange(double oldValue,double oldMin,double oldMax,double newMin,double newMax)
+        {
+            double newValue;
+            double oldRange = (oldMax - oldMin);
+            if (oldRange == 0)
+                newValue = newMin;
+            else
+            {
+                double newRange = (newMax - newMin);
+                newValue = (((oldValue - oldMin) * newRange) / oldRange) + newMin;
+            }
+            return newValue;
         }
     }
 }
