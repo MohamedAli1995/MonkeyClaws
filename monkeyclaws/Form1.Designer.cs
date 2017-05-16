@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.Calibrate = new System.Windows.Forms.Button();
-            this.Configure = new System.Windows.Forms.Button();
+            this.changeMode = new System.Windows.Forms.Button();
             this.Start = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
@@ -44,14 +44,15 @@
             this.Calibrate.UseVisualStyleBackColor = true;
             this.Calibrate.Click += new System.EventHandler(this.Calibrate_Click);
             // 
-            // Configure
+            // changeMode
             // 
-            this.Configure.Location = new System.Drawing.Point(256, 159);
-            this.Configure.Name = "Configure";
-            this.Configure.Size = new System.Drawing.Size(196, 42);
-            this.Configure.TabIndex = 3;
-            this.Configure.Text = "Configure";
-            this.Configure.UseVisualStyleBackColor = true;
+            this.changeMode.Location = new System.Drawing.Point(256, 159);
+            this.changeMode.Name = "changeMode";
+            this.changeMode.Size = new System.Drawing.Size(196, 42);
+            this.changeMode.TabIndex = 3;
+            this.changeMode.Text = "Mouse Mode";
+            this.changeMode.UseVisualStyleBackColor = true;
+            this.changeMode.Click += new System.EventHandler(this.Configure_Click);
             // 
             // Start
             // 
@@ -79,7 +80,7 @@
             this.ClientSize = new System.Drawing.Size(717, 408);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.Start);
-            this.Controls.Add(this.Configure);
+            this.Controls.Add(this.changeMode);
             this.Controls.Add(this.Calibrate);
             this.Name = "Form1";
             this.Text = "Form1";
@@ -91,7 +92,7 @@
 
         #endregion
         private System.Windows.Forms.Button Calibrate;
-        private System.Windows.Forms.Button Configure;
+        private System.Windows.Forms.Button changeMode;
         private System.Windows.Forms.Button Start;
         private System.Windows.Forms.Label label1;
     }

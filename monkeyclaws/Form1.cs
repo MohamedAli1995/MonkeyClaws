@@ -23,7 +23,9 @@ namespace monkeyclaws
         
         //mode  1->mouse ,0->keyboard
         string settingsPath = "C:\\Users\\muham\\Desktop\\monkeyClawsSettings";
-        int mode = 1;
+        int mode = 0;
+        double lastMouseX = 0;
+        double lastMouseY = 0;
         int mouseMinAngle = -40;
         int mouseMaxAngle = 40;
         int flexNumber = 5;
@@ -48,7 +50,7 @@ namespace monkeyclaws
         List<double> flexStartClosed = new List<double> { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         List<double> flexCurr=new List<double> { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         List<ushort> flexKey = new List<ushort> {
-            0x39,0xC8,0x0,0xC8,0x30 };
+            0x39,0xCB,0xCD ,0xC8,0xCD  };
             List<bool> flexPressed = new List<bool> { false, false, false,false,false };
         List<bool> flexWasPressed = new List<bool> { false, false, false, false, false };
 
@@ -72,7 +74,9 @@ namespace monkeyclaws
         {
       
             StreamReader settingsFileReader;
-            settingsFileReader = new StreamReader(settingsPath + ".txt");
+
+                settingsFileReader = new StreamReader(settingsPath + ".txt");
+        
             for (int i = 0; i < 3; i++)
             {
                 gyroStart[i] = (double.Parse(settingsFileReader.ReadLine()));
@@ -198,13 +202,19 @@ namespace monkeyclaws
         private void Init()
         {
             mySerial = new SerialPort();
-            mySerial.BaudRate = 115200;
+            mySerial.BaudRate =  9600;
             mySerial.PortName = "COM12";
-           // mySerial.NewLine = Environment.NewLine;
-           // mySerial.DataReceived += serialPortData;
-            mySerial.Open();
+            // mySerial.NewLine = Environment.NewLine;
+            // mySerial.DataReceived += serialPortData;
+            try
+            { mySerial.Open(); }
+            catch(Exception e)
+            {
+                Console.WriteLine("connection could'ne be opened");
+            }
             worker = new BackgroundWorker();
             worker.WorkerSupportsCancellation = true;
+            
             worker.DoWork += Update;
             worker.RunWorkerAsync();
 
@@ -356,14 +366,17 @@ namespace monkeyclaws
         private void Update(object sender, DoWorkEventArgs e)
         {
             while (true)
-            { if (gyroStarted) {
+            {
+
+           
+                if (gyroStarted) {
                   //  Console.WriteLine((gyroStartX + gyroCurrX).ToString());
                 }
                 if (mode == 0) { 
                 HandleGyro();
                 ApplyGyro();
                 HandleFlex();
-               ApplyFlex();
+               ApplyFlexKeyboard();
                 }
                else  //mouse mode
                 {
@@ -388,6 +401,7 @@ namespace monkeyclaws
             {
                 if (flexPressed[i] == true)
                 {
+                   
                     Console.WriteLine(i);
                     SendKey(flexKey[i]);
                   
@@ -404,6 +418,37 @@ namespace monkeyclaws
                 }
             }
         }
+
+
+
+        private void ApplyFlexKeyboard()
+        {
+            for (int i = 0; i < flexNumber; i++)
+            {
+                if (i == 2) continue;
+                if (flexPressed[i] == true)
+                {
+                    if(!flexWasPressed[i])
+                    {
+
+                    
+                    Console.WriteLine(i);
+                    SendKey(flexKey[i]);
+                        flexWasPressed[i] = true;
+                    }
+
+                }
+                else
+                {
+                    if (flexWasPressed[i])
+                    {
+                        SendKeyUp(flexKey[i]);
+                        flexWasPressed[i] = false;
+                    }
+
+                }
+            }
+        }
         int counter = 0;
         private void HandleFlex()
         {
@@ -414,7 +459,7 @@ namespace monkeyclaws
             for (int i = 0; i < flexNumber; i++)
             {
                 //  if (flexCurr[i] <= (flexStart[i]-flexStartClosed[i])/2)
-                if (flexCurr[i] <= 0.5f)
+                if (flexCurr[i] <= 0.6f&&flexCurr[i]!=-1)
                 {
                     flexPressed[i] = true;
                  //   flexWasPressed[i] = true;
@@ -455,13 +500,18 @@ namespace monkeyclaws
                 gyroCalculated[i] =
                     MapRange(gyroCalculated[i], -0.4, 0.5, 0, 65535);
             }
+            //vertical motion
+           
             input.Mouse.MoveMouseTo(gyroCalculated[2], gyroCalculated[0]);
+            lastMouseX = gyroCalculated[2];
+            lastMouseY = gyroCalculated[0];
             //  double gyroYCalculated = -gyroStartY + gyroCurrY;
             //block mouse to 90,-90
 
             Console.Write(gyroCurr[0].ToString() + " ," + gyroCurr[1].ToString());
             Console.Write("\n");
             //  input.Mouse.Sleep(1);
+
             if (flexPressed[1])
             {
                 if (!flexWasPressed[1])
@@ -678,6 +728,13 @@ namespace monkeyclaws
                 newValue = (((oldValue - oldMin) * newRange) / oldRange) + newMin;
             }
             return newValue;
+        }
+
+        private void Configure_Click(object sender, EventArgs e)
+        {
+         //   Console.WriteLine("ana gwa");
+            changeMode.Text = (changeMode.Text == "Keyboard Mode" ? "Mouse Mode" : "Keyboard Mode");
+            mode = mode == 1 ? 0 : 1;
         }
     }
 }

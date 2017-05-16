@@ -96,7 +96,7 @@ namespace monkeyclaws
               sim.Mouse.MoveMouseTo(65535, 0);*/
             InitializeComponent();
             mySerial = new SerialPort();
-            mySerial.BaudRate = 115200;
+            mySerial.BaudRate =  9600;
             mySerial.ReadTimeout = 100;
             mySerial.PortName = "COM12";
            // mySerial.ReadTimeout = 10;
